@@ -30,6 +30,7 @@ enum class ListOpt : int {
 	ShowAll = 1,
 	Custom,
 	WHIP,
+	MoQ
 };
 
 enum class Section : int {
@@ -40,6 +41,11 @@ enum class Section : int {
 bool OBSBasicSettings::IsCustomService() const
 {
 	return ui->service->currentData().toInt() == (int)ListOpt::Custom;
+}
+
+inline bool OBSBasicSettings::IsMoQ() const
+{
+	return ui->service->currentData().toInt() == (int)ListOpt::MoQ;
 }
 
 inline bool OBSBasicSettings::IsWHIP() const
@@ -256,12 +262,15 @@ void OBSBasicSettings::SaveStream1Settings()
 {
 	bool customServer = IsCustomService();
 	bool whip = IsWHIP();
+	bool moq = IsMoQ();
 	const char *service_id = "rtmp_common";
 
 	if (customServer) {
 		service_id = "rtmp_custom";
 	} else if (whip) {
 		service_id = "whip_custom";
+	} else if (moq) {
+		service_id = "moq_custom";
 	}
 
 	obs_service_t *oldService = main->GetService();
@@ -269,7 +278,7 @@ void OBSBasicSettings::SaveStream1Settings()
 
 	OBSDataAutoRelease settings = obs_data_create();
 
-	if (!customServer && !whip) {
+	if (!customServer && !whip && !moq) {
 		obs_data_set_string(settings, "service", QT_TO_UTF8(ui->service->currentText()));
 		obs_data_set_string(settings, "protocol", QT_TO_UTF8(protocol));
 		if (ui->server->currentData() == CustomServerUUID()) {
@@ -306,6 +315,8 @@ void OBSBasicSettings::SaveStream1Settings()
 	if (whip) {
 		obs_data_set_string(settings, "service", "WHIP");
 		obs_data_set_string(settings, "bearer_token", QT_TO_UTF8(ui->key->text()));
+    } else if (moq) {
+		obs_data_set_string(settings, "service", "MoQ");
 	} else {
 		obs_data_set_string(settings, "key", QT_TO_UTF8(ui->key->text()));
 	}
@@ -363,7 +374,7 @@ void OBSBasicSettings::SaveStream1Settings()
 
 void OBSBasicSettings::UpdateMoreInfoLink()
 {
-	if (IsCustomService() || IsWHIP()) {
+	if (IsCustomService() || IsWHIP() || IsMoQ()) {
 		ui->moreInfoButton->hide();
 		return;
 	}
@@ -413,6 +424,9 @@ void OBSBasicSettings::UpdateKeyLink()
 		ui->streamKeyLabel->setToolTip("");
 	} else if (IsWHIP()) {
 		ui->streamKeyLabel->setText(QTStr("Basic.AutoConfig.StreamPage.BearerToken"));
+		ui->streamKeyLabel->setToolTip("");
+	} else if (IsMoQ()) {
+		ui->streamKeyLabel->setText("TBD");
 		ui->streamKeyLabel->setToolTip("");
 	} else if (!IsCustomService()) {
 		ui->streamKeyLabel->setText(QTStr("Basic.AutoConfig.StreamPage.StreamKey"));
@@ -474,6 +488,10 @@ void OBSBasicSettings::LoadServices(bool showAll)
 
 	if (obs_is_output_protocol_registered("WHIP")) {
 		ui->service->addItem(QTStr("WHIP"), QVariant((int)ListOpt::WHIP));
+	}
+
+	if (obs_is_output_protocol_registered("MoQ")) {
+		ui->service->addItem(QTStr("MoQ"), QVariant((int)ListOpt::MoQ));
 	}
 
 	if (!showAll) {
@@ -609,6 +627,7 @@ void OBSBasicSettings::ServiceChanged(bool resetFields)
 	std::string service = QT_TO_UTF8(ui->service->currentText());
 	bool custom = IsCustomService();
 	bool whip = IsWHIP();
+	bool moq = IsMoQ();
 
 	ui->disconnectAccount->setVisible(false);
 	ui->bandwidthTestEnable->setVisible(false);
@@ -629,7 +648,7 @@ void OBSBasicSettings::ServiceChanged(bool resetFields)
 	ui->authPwLabel->setVisible(custom);
 	ui->authPwWidget->setVisible(custom);
 
-	if (custom || whip) {
+	if (custom || whip || moq) {
 		ui->destinationLayout->insertRow(1, ui->serverLabel, ui->serverStackedWidget);
 
 		ui->serverStackedWidget->setCurrentIndex(1);
@@ -752,17 +771,20 @@ OBSService OBSBasicSettings::SpawnTempService()
 {
 	bool custom = IsCustomService();
 	bool whip = IsWHIP();
+	bool moq = IsMoQ();
 	const char *service_id = "rtmp_common";
 
 	if (custom) {
 		service_id = "rtmp_custom";
+	} else if (moq) {
+		service_id = "moq_custom";
 	} else if (whip) {
 		service_id = "whip_custom";
 	}
 
 	OBSDataAutoRelease settings = obs_data_create();
 
-	if (!custom && !whip) {
+	if (!custom && !whip && !moq) {
 		obs_data_set_string(settings, "service", QT_TO_UTF8(ui->service->currentText()));
 		obs_data_set_string(settings, "server", QT_TO_UTF8(ui->server->currentData().toString()));
 	} else {
@@ -771,7 +793,7 @@ OBSService OBSBasicSettings::SpawnTempService()
 
 	if (whip)
 		obs_data_set_string(settings, "bearer_token", QT_TO_UTF8(ui->key->text()));
-	else
+	else if (!moq)
 		obs_data_set_string(settings, "key", QT_TO_UTF8(ui->key->text()));
 
 	OBSServiceAutoRelease newService = obs_service_create(service_id, "temp_service", settings, nullptr);
