@@ -270,7 +270,7 @@ void OBSBasicSettings::SaveStream1Settings()
 	} else if (whip) {
 		service_id = "whip_custom";
 	} else if (moq) {
-		service_id = "moq_custom";
+		service_id = "moq_service";
 	}
 
 	obs_service_t *oldService = main->GetService();
@@ -777,7 +777,7 @@ OBSService OBSBasicSettings::SpawnTempService()
 	if (custom) {
 		service_id = "rtmp_custom";
 	} else if (moq) {
-		service_id = "moq_custom";
+		service_id = "moq_service";
 	} else if (whip) {
 		service_id = "whip_custom";
 	}
