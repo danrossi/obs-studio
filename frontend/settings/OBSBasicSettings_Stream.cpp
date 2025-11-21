@@ -106,6 +106,7 @@ void OBSBasicSettings::LoadStream1Settings()
 	const char *type = obs_service_get_type(service_obj);
 	bool is_rtmp_custom = (strcmp(type, "rtmp_custom") == 0);
 	bool is_rtmp_common = (strcmp(type, "rtmp_common") == 0);
+	bool is_moq = (strcmp(type, "moq_service") == 0);
 	bool is_whip = (strcmp(type, "whip_custom") == 0);
 
 	loading = true;
@@ -119,7 +120,7 @@ void OBSBasicSettings::LoadStream1Settings()
 	protocol = QT_UTF8(obs_service_get_protocol(service_obj));
 	const char *bearer_token = obs_data_get_string(settings, "bearer_token");
 
-	if (is_rtmp_custom || is_whip)
+	if (is_rtmp_custom || is_whip || is_moq)
 		ui->customServer->setText(server);
 
 	if (is_rtmp_custom) {
@@ -217,7 +218,7 @@ void OBSBasicSettings::LoadStream1Settings()
 
 	if (is_whip)
 		ui->key->setText(bearer_token);
-	else
+	else if (!is_moq)
 		ui->key->setText(key);
 
 	ServiceChanged(true);
