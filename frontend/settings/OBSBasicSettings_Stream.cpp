@@ -218,7 +218,7 @@ void OBSBasicSettings::LoadStream1Settings()
 
 	if (is_whip)
 		ui->key->setText(bearer_token);
-	else if (!is_moq)
+	else
 		ui->key->setText(key);
 
 	ServiceChanged(true);
@@ -318,6 +318,7 @@ void OBSBasicSettings::SaveStream1Settings()
 		obs_data_set_string(settings, "bearer_token", QT_TO_UTF8(ui->key->text()));
     } else if (moq) {
 		obs_data_set_string(settings, "service", "MoQ");
+		obs_data_set_string(settings, "key", QT_TO_UTF8(ui->key->text()));
 	} else {
 		obs_data_set_string(settings, "key", QT_TO_UTF8(ui->key->text()));
 	}
@@ -427,7 +428,7 @@ void OBSBasicSettings::UpdateKeyLink()
 		ui->streamKeyLabel->setText(QTStr("Basic.AutoConfig.StreamPage.BearerToken"));
 		ui->streamKeyLabel->setToolTip("");
 	} else if (IsMoQ()) {
-		ui->streamKeyLabel->setText("TBD");
+		ui->streamKeyLabel->setText(QTStr("Basic.AutoConfig.StreamPage.Path"));
 		ui->streamKeyLabel->setToolTip("");
 	} else if (!IsCustomService()) {
 		ui->streamKeyLabel->setText(QTStr("Basic.AutoConfig.StreamPage.StreamKey"));
@@ -794,7 +795,7 @@ OBSService OBSBasicSettings::SpawnTempService()
 
 	if (whip)
 		obs_data_set_string(settings, "bearer_token", QT_TO_UTF8(ui->key->text()));
-	else if (!moq)
+	else
 		obs_data_set_string(settings, "key", QT_TO_UTF8(ui->key->text()));
 
 	OBSServiceAutoRelease newService = obs_service_create(service_id, "temp_service", settings, nullptr);
